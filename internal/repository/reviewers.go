@@ -11,6 +11,7 @@ type IReviewersRepository interface {
 	GetReviewersIdByPullRequestId(id string) ([]string, error)
 	ChangeReviewer(pullRequestId, oldReviewerId, newReviewerId string) error
 	GetPullRequestsByUserId(id string) ([]string, error)
+	CountAssignmentsByUser() (map[string]int, error)
 }
 
 type ReviewersRepository struct {
@@ -101,4 +102,33 @@ func (rr *ReviewersRepository) GetPullRequestsByUserId(id string) ([]string, err
 	}
 
 	return pullRequestIds, nil
+}
+
+func (rr *ReviewersRepository) CountAssignmentsByUser() (map[string]int, error) {
+	stmt := "SELECT user_id, COUNT(*) FROM reviewers GROUP BY user_id"
+
+	rows, err := rr.Db.Query(stmt)
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		if errClose := rows.Close(); errClose != nil {
+			if err == nil {
+				err = fmt.Errorf("failed to close database rows: %w", errClose)
+			}
+		}
+	}()
+
+	result := make(map[string]int)
+	for rows.Next() {
+		var userId string
+		var count int
+		if err := rows.Scan(&userId, &count); err != nil {
+			return nil, err
+		}
+		result[userId] = count
+	}
+
+	return result, nil
 }

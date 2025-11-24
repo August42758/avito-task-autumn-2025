@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"pr-service/internal/models"
@@ -78,4 +79,49 @@ func (pr *PullRequestsRepository) GetPullRequestById(id string) (*models.PullReq
 
 func (pr *PullRequestsRepository) GetDB() *sql.DB {
 	return pr.Db
+}
+
+func (pr *PullRequestsRepository) CountAllPullRequests() (int, error) {
+	stmt := "SELECT COUNT(*) FROM pull_requests"
+
+	var count int
+	err := pr.Db.QueryRow(stmt).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
+
+func (pr *PullRequestsRepository) CountPullRequestsByStatus() (map[string]int, error) {
+	stmt := `SELECT pull_requests_status.status, COUNT(*)
+	FROM pull_requests
+	JOIN pull_requests_status
+	ON pull_requests.status_id = pull_requests_status.pr_status_id
+	GROUP BY pull_requests_status.status`
+
+	rows, err := pr.Db.Query(stmt)
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		if errClose := rows.Close(); errClose != nil {
+			if err == nil {
+				err = fmt.Errorf("failed to close database rows: %w", errClose)
+			}
+		}
+	}()
+
+	result := make(map[string]int)
+	for rows.Next() {
+		var status string
+		var count int
+		if err := rows.Scan(&status, &count); err != nil {
+			return nil, err
+		}
+		result[status] = count
+	}
+
+	return result, nil
 }

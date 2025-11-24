@@ -73,6 +73,12 @@ func main() {
 		Lgr:                    lgr,
 	}
 
+	statsService := &service.StatsService{
+		UsersRepository:        usersRepository,
+		ReviewersRepository:    reviewersRepository,
+		PullRequestsRepository: pullRequestsRepository,
+	}
+
 	//создаем handlers
 	usersHandler := &handlers.UsersHandlers{
 		UserService: usersService,
@@ -86,8 +92,12 @@ func main() {
 		PullRequestService: pullRequestsService,
 	}
 
+	statsHandler := &handlers.StatsHandlers{
+		StatsService: statsService,
+	}
+
 	//создаем роутер
-	router := routes.NewRouter(teamsHandler, usersHandler, pullRequestsHandler)
+	router := routes.NewRouter(teamsHandler, usersHandler, pullRequestsHandler, statsHandler)
 
 	lgr.Info("Server initialization was passed successfully")
 

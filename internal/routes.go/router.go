@@ -6,7 +6,11 @@ import (
 	"pr-service/internal/handlers"
 )
 
-func NewRouter(teamsHandler handlers.ITeamsHandlers, usersHandler handlers.IUsersHandlers, pullRequestsHandler handlers.IPullRequestsHandlers) *http.ServeMux {
+func NewRouter(teamsHandler handlers.ITeamsHandlers,
+	usersHandler handlers.IUsersHandlers,
+	pullRequestsHandler handlers.IPullRequestsHandlers,
+	statsHandler handlers.IStatsHandlers,
+) *http.ServeMux {
 	router := http.NewServeMux()
 
 	router.HandleFunc("/team/add", teamsHandler.AddTeam)
@@ -14,10 +18,12 @@ func NewRouter(teamsHandler handlers.ITeamsHandlers, usersHandler handlers.IUser
 
 	router.HandleFunc("/pullRequest/create", pullRequestsHandler.AddPullRequest)
 	router.HandleFunc("/pullRequest/merge", pullRequestsHandler.MergePullRequest)
-	router.HandleFunc("/pullRequest/reassign", pullRequestsHandler.ReassignReviewer) //не рабоатет так, как должна
+	router.HandleFunc("/pullRequest/reassign", pullRequestsHandler.ReassignReviewer)
 
-	router.HandleFunc("/users/getReview", usersHandler.GetReview) //неясно, что с ней
+	router.HandleFunc("/users/getReview", usersHandler.GetReview)
 	router.HandleFunc("/users/setIsActive", usersHandler.SetIsActive)
+
+	router.HandleFunc("/stats", statsHandler.GetStats)
 
 	return router
 }

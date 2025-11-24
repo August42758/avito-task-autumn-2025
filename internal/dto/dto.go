@@ -137,3 +137,9 @@ type UserPullRequestsDTO struct {
 	UserId       string                `json:"user_id"`
 	PullRequests []*UserPullRequestDTO `json:"pull_requests"`
 }
+
+type StatsResponseDTO struct {
+	TotalPRs          int            `json:"total_prs"`
+	PRsByStatus       map[string]int `json:"pr_by_status"`
+	AssignmentsByUser map[string]int `json:"assignments_by_user"`
+}

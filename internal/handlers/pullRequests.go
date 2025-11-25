@@ -100,7 +100,7 @@ func (ph *PullRequestsHandlers) MergePullRequest(w http.ResponseWriter, r *http.
 
 	// валидация
 	validator.ValidatePullRequestId(requestDTO.PullRequestId)
-	if validator.GetIsValid() {
+	if !validator.GetIsValid() {
 		helpers.WriteErrorReponse(w, http.StatusBadRequest, "WRONG_DATA_INPUT", errWrongDataInput.Error())
 		return
 	}

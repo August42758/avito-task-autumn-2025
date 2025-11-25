@@ -1,8 +1,8 @@
-CREATE TABLE teams (
+CREATE TABLE IF NOT EXISTS teams (
 	team_name VARCHAR(255) PRIMARY KEY
 );
 
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
 	user_id VARCHAR(255) PRIMARY KEY,
 	username VARCHAR(255) NOT NULL,
 	is_active BOOLEAN NOT NULL,
@@ -10,12 +10,12 @@ CREATE TABLE users (
 	FOREIGN KEY(team_name) REFERENCES teams(team_name)
 );
 
-CREATE TABLE pull_requests_status (
+CREATE TABLE IF NOT EXISTS pull_requests_status (
 	pr_status_id SERIAL PRIMARY KEY,
 	status VARCHAR(255) NOT NULL 
 );
 
-CREATE TABLE pull_requests (
+CREATE TABLE IF NOT EXISTS pull_requests (
 	pull_request_id VARCHAR(255) PRIMARY KEY,
 	pull_request_name VARCHAR(255) NOT NULL,
 	author_id VARCHAR(255) NOT NULL,
@@ -28,7 +28,7 @@ CREATE TABLE pull_requests (
 
 
 
-CREATE TABLE reviewers (
+CREATE TABLE IF NOT EXISTS reviewers (
 	reviewer_id SERIAL PRIMARY KEY,
 	user_id VARCHAR(255) NOT NULL,
 	pull_request_id VARCHAR(255) NOT NULL,

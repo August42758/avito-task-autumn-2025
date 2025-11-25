@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 
 	"pr-service/internal/dto"
@@ -18,7 +19,6 @@ type IUsersHandlers interface {
 
 type UsersHandlers struct {
 	UserService service.IUsersService
-	Validator   validators.IValidator
 }
 
 func (uh *UsersHandlers) SetIsActive(w http.ResponseWriter, r *http.Request) {
@@ -31,13 +31,20 @@ func (uh *UsersHandlers) SetIsActive(w http.ResponseWriter, r *http.Request) {
 	// читаем тело запроса
 	var requestDTO dto.IsActiveUserDTO
 	if err := json.NewDecoder(r.Body).Decode(&requestDTO); err != nil {
-		helpers.WriteErrorReponse(w, http.StatusInternalServerError, "SERVER_ERROR", errInternalServer.Error())
+		if err == io.EOF {
+			helpers.WriteErrorReponse(w, http.StatusBadRequest, "EMPTY_BODY", errEmptyBody.Error())
+			return
+		}
+
+		helpers.WriteErrorReponse(w, http.StatusBadRequest, "WRONG_DATA_INPUT", errWrongDataInput.Error())
 		return
 	}
 
+	validator := validators.NewValidator()
+
 	// валидация
-	uh.Validator.ValidateUserId(requestDTO.Id)
-	if !uh.Validator.GetIsValid() {
+	validator.ValidateUserId(requestDTO.Id)
+	if !validator.GetIsValid() {
 		helpers.WriteErrorReponse(w, http.StatusBadRequest, "WRONG_DATA_INPUT", errWrongDataInput.Error())
 		return
 	}

@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 
 	"pr-service/internal/dto"
@@ -18,7 +19,6 @@ type ITeamsHandlers interface {
 
 type TeamsHandlers struct {
 	TeamService service.ITeamsService
-	Validator   validators.IValidator
 }
 
 func (th *TeamsHandlers) AddTeam(w http.ResponseWriter, r *http.Request) {
@@ -31,18 +31,27 @@ func (th *TeamsHandlers) AddTeam(w http.ResponseWriter, r *http.Request) {
 	// чиатет тело запроса
 	var requestDTO dto.TeamDTO
 	if err := json.NewDecoder(r.Body).Decode(&requestDTO); err != nil {
-		helpers.WriteErrorReponse(w, http.StatusInternalServerError, "SERVER_ERROR", errInternalServer.Error())
+		if err == io.EOF {
+			helpers.WriteErrorReponse(w, http.StatusBadRequest, "EMPTY_BODY", errEmptyBody.Error())
+			return
+		}
+
+		helpers.WriteErrorReponse(w, http.StatusBadRequest, "WRONG_DATA_INPUT", errWrongDataInput.Error())
 		return
 	}
 
 	// валидация
 
+	validator := validators.NewValidator()
+
+	validator.ValidateTeamName(requestDTO.TeamName)
+
 	for _, member := range requestDTO.Members {
-		th.Validator.ValidateUserId(member.UserId)
-		th.Validator.ValidateUsername(member.Username)
+		validator.ValidateUserId(member.UserId)
+		validator.ValidateUsername(member.Username)
 	}
 
-	if !th.Validator.GetIsValid() {
+	if !validator.GetIsValid() {
 		helpers.WriteErrorReponse(w, http.StatusBadRequest, "WRONG_DATA_INPUT", errWrongDataInput.Error())
 		return
 	}

@@ -16,4 +16,5 @@ var (
 	errNoCandidate = errors.New("no active replacement candidate in team")
 	errNotFound    = errors.New("resourse not found")
 	errUserExists  = errors.New("user_id already exists")
+	errEmptyBody   = errors.New("Request body is empty")
 )

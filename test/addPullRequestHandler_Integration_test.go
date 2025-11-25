@@ -17,7 +17,6 @@ import (
 	"pr-service/internal/service"
 	"pr-service/internal/testhelpers"
 	"pr-service/internal/testutils"
-	"pr-service/internal/validators"
 )
 
 func TestAddPullRequestHandler(t *testing.T) {
@@ -40,12 +39,9 @@ func TestAddPullRequestHandler(t *testing.T) {
 		Lgr:                    lgr,
 	}
 
-	validator := validators.NewValidator()
-
 	// создаем сам хендлер
 	pullRequestHandler := handlers.PullRequestsHandlers{
 		PullRequestService: pullRequestService,
-		Validator:          validator,
 	}
 
 	// Предварительно создаем тестовые данные

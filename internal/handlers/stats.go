@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"io"
 	"net/http"
 
 	"pr-service/internal/helpers"
@@ -23,7 +24,12 @@ func (sh *StatsHandlers) GetStats(w http.ResponseWriter, r *http.Request) {
 
 	responseDTO, err := sh.StatsService.GetStats()
 	if err != nil {
-		helpers.WriteErrorReponse(w, http.StatusInternalServerError, "SERVER_ERROR", errInternalServer.Error())
+		if err == io.EOF {
+			helpers.WriteErrorReponse(w, http.StatusBadRequest, "EMPTY_BODY", errEmptyBody.Error())
+			return
+		}
+
+		helpers.WriteErrorReponse(w, http.StatusBadRequest, "WRONG_DATA_INPUT", errWrongDataInput.Error())
 		return
 	}
 

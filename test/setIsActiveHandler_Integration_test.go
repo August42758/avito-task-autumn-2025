@@ -15,7 +15,6 @@ import (
 	"pr-service/internal/service"
 	"pr-service/internal/testhelpers"
 	"pr-service/internal/testutils"
-	"pr-service/internal/validators"
 )
 
 func TestSetIsActiveHandler(t *testing.T) {
@@ -38,12 +37,9 @@ func TestSetIsActiveHandler(t *testing.T) {
 		Lgr:                    lgr,
 	}
 
-	validator := validators.NewValidator()
-
 	// создаем сам хендлер
 	userHandler := handlers.UsersHandlers{
 		UserService: userService,
-		Validator:   validator,
 	}
 
 	// Предварительно создаем команду и пользователя для тестов

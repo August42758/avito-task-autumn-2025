@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 
 	"pr-service/internal/dto"
@@ -19,28 +20,35 @@ type IPullRequestsHandlers interface {
 
 type PullRequestsHandlers struct {
 	PullRequestService service.IPullRequestsService
-	Validator          validators.IValidator
 }
 
 func (ph *PullRequestsHandlers) AddPullRequest(w http.ResponseWriter, r *http.Request) {
 	// проверяем POST метод
 	if r.Method != http.MethodPost {
 		helpers.WriteErrorReponse(w, http.StatusMethodNotAllowed, "WRONG_METHOD", errWrongMethod.Error())
+
 		return
 	}
 
 	// чиатет тело запроса
 	var requestDTO dto.RequestPullrequestDTO
 	if err := json.NewDecoder(r.Body).Decode(&requestDTO); err != nil {
-		helpers.WriteErrorReponse(w, http.StatusInternalServerError, "SERVER_ERROR", errInternalServer.Error())
+		if err == io.EOF {
+			helpers.WriteErrorReponse(w, http.StatusBadRequest, "EMPTY_BODY", errEmptyBody.Error())
+			return
+		}
+
+		helpers.WriteErrorReponse(w, http.StatusBadRequest, "WRONG_DATA_INPUT", errWrongDataInput.Error())
 		return
 	}
 
+	validator := validators.NewValidator()
+
 	// валидация
-	ph.Validator.ValidatePullRequestId(requestDTO.PullRequestId)
-	ph.Validator.ValidatePullRequestName(requestDTO.PullRequestName)
-	ph.Validator.ValidateUserId(requestDTO.AuthorID)
-	if !ph.Validator.GetIsValid() {
+	validator.ValidatePullRequestId(requestDTO.PullRequestId)
+	validator.ValidatePullRequestName(requestDTO.PullRequestName)
+	validator.ValidateUserId(requestDTO.AuthorID)
+	if !validator.GetIsValid() {
 		helpers.WriteErrorReponse(w, http.StatusBadRequest, "WRONG_DATA_INPUT", errWrongDataInput.Error())
 		return
 	}
@@ -79,13 +87,20 @@ func (ph *PullRequestsHandlers) MergePullRequest(w http.ResponseWriter, r *http.
 	// чиатет тело запроса
 	var requestDTO dto.PullRequestIdDTO
 	if err := json.NewDecoder(r.Body).Decode(&requestDTO); err != nil {
-		helpers.WriteErrorReponse(w, http.StatusInternalServerError, "SERVER_ERROR", errInternalServer.Error())
+		if err == io.EOF {
+			helpers.WriteErrorReponse(w, http.StatusBadRequest, "EMPTY_BODY", errEmptyBody.Error())
+			return
+		}
+
+		helpers.WriteErrorReponse(w, http.StatusBadRequest, "WRONG_DATA_INPUT", errWrongDataInput.Error())
 		return
 	}
 
+	validator := validators.NewValidator()
+
 	// валидация
-	ph.Validator.ValidatePullRequestId(requestDTO.PullRequestId)
-	if !ph.Validator.GetIsValid() {
+	validator.ValidatePullRequestId(requestDTO.PullRequestId)
+	if validator.GetIsValid() {
 		helpers.WriteErrorReponse(w, http.StatusBadRequest, "WRONG_DATA_INPUT", errWrongDataInput.Error())
 		return
 	}
@@ -124,14 +139,21 @@ func (ph *PullRequestsHandlers) ReassignReviewer(w http.ResponseWriter, r *http.
 	// валидируем тело запроса
 	var requestDTO dto.RequestReassignDTO
 	if err := json.NewDecoder(r.Body).Decode(&requestDTO); err != nil {
-		helpers.WriteErrorReponse(w, http.StatusInternalServerError, "SERVER_ERROR", errInternalServer.Error())
+		if err == io.EOF {
+			helpers.WriteErrorReponse(w, http.StatusBadRequest, "EMPTY_BODY", errEmptyBody.Error())
+			return
+		}
+
+		helpers.WriteErrorReponse(w, http.StatusBadRequest, "WRONG_DATA_INPUT", errWrongDataInput.Error())
 		return
 	}
 
+	validator := validators.NewValidator()
+
 	// валидация
-	ph.Validator.ValidatePullRequestId(requestDTO.PullRequestId)
-	ph.Validator.ValidateUserId(requestDTO.OldUserId)
-	if !ph.Validator.GetIsValid() {
+	validator.ValidatePullRequestId(requestDTO.PullRequestId)
+	validator.ValidateUserId(requestDTO.OldUserId)
+	if !validator.GetIsValid() {
 		helpers.WriteErrorReponse(w, http.StatusBadRequest, "WRONG_DATA_INPUT", errWrongDataInput.Error())
 		return
 	}

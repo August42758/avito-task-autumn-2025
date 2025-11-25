@@ -22,6 +22,13 @@ func ConnectDB(addr string) (*sql.DB, error) {
 	return db, nil
 }
 
+func CloseDD(db *sql.DB) error {
+	if err := db.Close(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func GetDbAddres(host, port, name, user, password string) string {
 	addr := "postgres://"
 	addr += user + ":"

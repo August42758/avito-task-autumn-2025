@@ -18,7 +18,7 @@ func main() {
 	lgr := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 
 	//загрузка .env
-	cfg, err := config.Load("")
+	cfg, err := config.Load("./.env")
 	if err != nil {
 		lgr.With(
 			slog.String("error", err.Error()),
@@ -45,6 +45,13 @@ func main() {
 		).Error("Failed to connect to DB")
 		return
 	}
+	defer func() {
+		if err := database.CloseDD(db); err != nil {
+			lgr.With(
+				slog.String("error", err.Error()),
+			).Error("Failed to close DB")
+		}
+	}()
 
 	//создаем репозитории
 	usersRepository := &repository.UsersRepository{Db: db}

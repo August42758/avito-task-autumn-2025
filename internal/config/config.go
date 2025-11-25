@@ -50,6 +50,7 @@ func Load(path string) (*Config, error) {
 	//если запуск в докере, то устанавливаем название хоста для БД как имя контейнера
 	if os.Getenv("DOCKER") == "1" {
 		c.DBHost = "postgresql"
+		c.TestDBHost = "postgres_test"
 	}
 
 	return c, nil

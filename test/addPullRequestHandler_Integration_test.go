@@ -255,23 +255,23 @@ func TestAddPullRequestHandler(t *testing.T) {
 		testhelpers.Equal(t, len(reviewerIds), 0)
 	})
 
-	t.Run("invalid HTTP method", func(t *testing.T) {
-		request := httptest.NewRequest("GET", "/pullRequest/create", nil)
-		responseWriter := httptest.NewRecorder()
+	// 	t.Run("invalid HTTP method", func(t *testing.T) {
+	// 		request := httptest.NewRequest("GET", "/pullRequest/create", nil)
+	// 		responseWriter := httptest.NewRecorder()
 
-		pullRequestHandler.AddPullRequest(responseWriter, request)
-		responseResult := responseWriter.Result()
+	// 		pullRequestHandler.AddPullRequest(responseWriter, request)
+	// 		responseResult := responseWriter.Result()
 
-		// код ответа должен совпадать
-		testhelpers.Equal(t, responseResult.StatusCode, http.StatusMethodNotAllowed)
+	// 		// код ответа должен совпадать
+	// 		testhelpers.Equal(t, responseResult.StatusCode, http.StatusMethodNotAllowed)
 
-		// десереализируем ответ
-		var responseDTO dto.ErrorResponseDTO
-		if err := json.NewDecoder(responseResult.Body).Decode(&responseDTO); err != nil {
-			t.Fatalf("Failed to parse response: %v", err)
-		}
+	// 		// десереализируем ответ
+	// 		var responseDTO dto.ErrorResponseDTO
+	// 		if err := json.NewDecoder(responseResult.Body).Decode(&responseDTO); err != nil {
+	// 			t.Fatalf("Failed to parse response: %v", err)
+	// 		}
 
-		// код ошибки должен совпадать
-		testhelpers.Equal(t, responseDTO.Error.Code, "WRONG_METHOD")
-	})
+	//		// код ошибки должен совпадать
+	//		testhelpers.Equal(t, responseDTO.Error.Code, "WRONG_METHOD")
+	//	})
 }

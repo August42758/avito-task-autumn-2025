@@ -20,10 +20,9 @@ type UsersService struct {
 }
 
 func (us *UsersService) SetIsActiveById(isActiveUserDTO *dto.IsActiveUserDTO) (*dto.UserDTO, error) {
-
 	us.Lgr.Info("starting user active status operation")
 
-	//проверяем наличие пользователя в бд
+	// проверяем наличие пользователя в бд
 	user, err := us.UsersRepository.GetUserById(nil, isActiveUserDTO.Id)
 	if err != nil {
 		us.Lgr.With(
@@ -36,7 +35,7 @@ func (us *UsersService) SetIsActiveById(isActiveUserDTO *dto.IsActiveUserDTO) (*
 		return nil, err
 	}
 
-	//проверяем значение до изменения
+	// проверяем значение до изменения
 	if user.IsActive != isActiveUserDTO.IsActive {
 		if err := us.UsersRepository.UpdateUserIsActive(isActiveUserDTO.Id, isActiveUserDTO.IsActive); err != nil {
 			us.Lgr.With(
@@ -63,7 +62,7 @@ func (us *UsersService) SetIsActiveById(isActiveUserDTO *dto.IsActiveUserDTO) (*
 func (us *UsersService) GetPullRequestsByUserId(id string) (*dto.UserPullRequestsDTO, error) {
 	us.Lgr.Info("retrieving pull requests for user")
 
-	//проверяем наличие пользователя в бд
+	// проверяем наличие пользователя в бд
 	_, err := us.UsersRepository.GetUserById(nil, id)
 	if err != nil {
 		us.Lgr.With(
@@ -76,7 +75,7 @@ func (us *UsersService) GetPullRequestsByUserId(id string) (*dto.UserPullRequest
 		return nil, err
 	}
 
-	//получаем PR, на которые назначен пользователь
+	// получаем PR, на которые назначен пользователь
 	pullRequestIds, err := us.ReviewersRepository.GetPullRequestsByUserId(id)
 	if err != nil {
 		us.Lgr.With(
@@ -86,10 +85,9 @@ func (us *UsersService) GetPullRequestsByUserId(id string) (*dto.UserPullRequest
 		return nil, err
 	}
 
-	//формируем DTO
+	// формируем DTO
 	responseDTO := &dto.UserPullRequestsDTO{UserId: id, PullRequests: []*dto.UserPullRequestDTO{}}
 	for _, pullRequestId := range pullRequestIds {
-
 		pullRequestModel, err := us.PullRequestsRepository.GetPullRequestById(pullRequestId)
 		if err != nil {
 			us.Lgr.With(

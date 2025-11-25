@@ -117,7 +117,7 @@ func TestAddPullRequestHandler(t *testing.T) {
 		// должны быть назначены ревьюверы (2 человека)
 		testhelpers.Equal(t, len(reviewerIds), 2)
 
-		//проверяем что автор не назначен себе ревьювером
+		// проверяем что автор не назначен себе ревьювером
 		for _, reviewerId := range reviewerIds {
 			testhelpers.Equal(t, reviewerId != requestDTO.AuthorID, true)
 		}

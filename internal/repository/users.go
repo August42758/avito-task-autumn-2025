@@ -4,9 +4,10 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"pr-service/internal/models"
 
 	"github.com/lib/pq"
+
+	"pr-service/internal/models"
 )
 
 type IUsersRepository interface {
@@ -30,7 +31,7 @@ func (us *UsersRepository) AddUser(tx *sql.Tx, user *models.UserModel) error {
 		_, err = us.Db.Exec(stmt, user.Id, user.Username, user.TeamName, user.IsActive)
 	}
 
-	//ошибка во время операции или из-за дубликата user_id
+	// ошибка во время операции или из-за дубликата user_id
 	if err != nil {
 		var sqlError *pq.Error
 		if errors.As(err, &sqlError) {
@@ -55,7 +56,7 @@ func (us *UsersRepository) GetUsersByTeam(tx *sql.Tx, teamName string) ([]*model
 		rows, err = us.Db.Query(stmt, teamName)
 	}
 
-	//ошибки может быть только в процессе запроса
+	// ошибки может быть только в процессе запроса
 	if err != nil {
 		return nil, err
 	}

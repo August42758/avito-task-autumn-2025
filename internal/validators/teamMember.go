@@ -16,13 +16,12 @@ func NewTeamMemberValidator() *TeamMemberValidator {
 }
 
 func (v *TeamMemberValidator) ValidateUsername(username string) {
-
 	if username == "" {
 		v.IsValid = false
 		return
 	}
 
-	//длина не больше 255 символов из-за БД
+	// длина не больше 255 символов из-за БД
 	if utf8.RuneCountInString(username) > 255 {
 		v.IsValid = false
 	}
@@ -41,7 +40,7 @@ func (v *TeamMemberValidator) ValidateId(id string) {
 		return
 	}
 
-	//длина не больше 255 символов из-за БД
+	// длина не больше 255 символов из-за БД
 	if utf8.RuneCountInString(id) > 255 {
 		v.IsValid = false
 		return
@@ -54,7 +53,7 @@ func (v *TeamMemberValidator) ValidateTeamName(teamName string) {
 		return
 	}
 
-	//длина не больше 255 символов из-за БД
+	// длина не больше 255 символов из-за БД
 	if utf8.RuneCountInString(teamName) > 255 {
 		v.IsValid = false
 	}

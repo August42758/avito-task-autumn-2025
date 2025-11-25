@@ -3,9 +3,9 @@ package handlers
 import "errors"
 
 var (
-	errWrongMethod    = errors.New("This method isn't acceptable")
-	errInternalServer = errors.New("Server error")
-	errMissingParam   = errors.New("Query parameter is missing")
+	errWrongMethod    = errors.New("this method isn't acceptable")
+	errInternalServer = errors.New("server error")
+	errMissingParam   = errors.New("query parameter is missing")
 	errWrongDataInput = errors.New("wrong format of input data")
 
 	errTeamExists  = errors.New("team_name already exists")

@@ -258,5 +258,4 @@ func TestAddTeamHandler(t *testing.T) {
 		// код ответа должен совпадать
 		testhelpers.Equal(t, responseResult.StatusCode, http.StatusMethodNotAllowed)
 	})
-
 }

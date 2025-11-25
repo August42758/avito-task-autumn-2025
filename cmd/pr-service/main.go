@@ -14,10 +14,10 @@ import (
 )
 
 func main() {
-	//создаем логгер
+	// создаем логгер
 	lgr := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 
-	//загрузка .env
+	// загрузка .env
 	cfg, err := config.Load("./.env")
 	if err != nil {
 		lgr.With(
@@ -26,10 +26,10 @@ func main() {
 		return
 	}
 
-	//получаем адресс  базы данных
+	// получаем адресс  базы данных
 	dbAddr := database.GetDbAddres(cfg.DBHost, cfg.DBPort, cfg.DBName, cfg.DBUser, cfg.DBPassword)
 
-	//проверяем наличие миграций
+	// проверяем наличие миграций
 	if err := database.RunMigrations(dbAddr); err != nil {
 		lgr.With(
 			slog.String("error", err.Error()),
@@ -37,7 +37,7 @@ func main() {
 		return
 	}
 
-	//подключение к БД
+	// подключение к БД
 	db, err := database.ConnectDB(dbAddr)
 	if err != nil {
 		lgr.With(
@@ -53,13 +53,13 @@ func main() {
 		}
 	}()
 
-	//создаем репозитории
+	// создаем репозитории
 	usersRepository := &repository.UsersRepository{Db: db}
 	teamsRepository := &repository.TeamsRepository{Db: db}
 	reviewersRepository := &repository.ReviewersRepository{Db: db}
 	pullRequestsRepository := &repository.PullRequestsRepository{Db: db}
 
-	//создаем сервисы
+	// создаем сервисы
 	usersService := &service.UsersService{
 		UsersRepository:        usersRepository,
 		ReviewersRepository:    reviewersRepository,
@@ -86,7 +86,7 @@ func main() {
 		PullRequestsRepository: pullRequestsRepository,
 	}
 
-	//создаем handlers
+	// создаем handlers
 	usersHandler := &handlers.UsersHandlers{
 		UserService: usersService,
 	}
@@ -103,7 +103,7 @@ func main() {
 		StatsService: statsService,
 	}
 
-	//создаем роутер
+	// создаем роутер
 	router := routes.NewRouter(teamsHandler, usersHandler, pullRequestsHandler, statsHandler)
 
 	lgr.Info("Server initialization was passed successfully")

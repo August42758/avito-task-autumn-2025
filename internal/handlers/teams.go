@@ -21,20 +21,20 @@ type TeamsHandlers struct {
 }
 
 func (th *TeamsHandlers) AddTeam(w http.ResponseWriter, r *http.Request) {
-	//проверяем POST метод
+	// проверяем POST метод
 	if r.Method != http.MethodPost {
 		helpers.WriteErrorReponse(w, http.StatusMethodNotAllowed, "WRONG_METHOD", errWrongMethod.Error())
 		return
 	}
 
-	//чиатет тело запроса
+	// чиатет тело запроса
 	var requestDTO dto.TeamDTO
 	if err := json.NewDecoder(r.Body).Decode(&requestDTO); err != nil {
 		helpers.WriteErrorReponse(w, http.StatusInternalServerError, "SERVER_ERROR", errInternalServer.Error())
 		return
 	}
 
-	//валидация
+	// валидация
 	validator := validators.NewTeamMemberValidator()
 	for _, member := range requestDTO.Members {
 		validator.ValidateId(member.UserId)
@@ -46,39 +46,38 @@ func (th *TeamsHandlers) AddTeam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//испольуем сервисный слой, чтобы добавить команду и ее пользователей
+	// испольуем сервисный слой, чтобы добавить команду и ее пользователей
 	responseDTO, err := th.TeamService.AddTeamWithMembers(&requestDTO)
 	if err != nil {
-
-		//если команда уже существует
+		// если команда уже существует
 		if errors.Is(err, service.ErrTeamExists) {
 			helpers.WriteErrorReponse(w, http.StatusBadRequest, "TEAM_EXISTS", errTeamExists.Error())
 			return
 		}
 
-		//если пользователь уже существует
+		// если пользователь уже существует
 		if errors.Is(err, service.ErrUserExists) {
 			helpers.WriteErrorReponse(w, http.StatusBadRequest, "USER_EXISTS", errUserExists.Error())
 			return
 		}
 
-		//если ошибка после работы сервисного слоя со стороны сервера
+		// если ошибка после работы сервисного слоя со стороны сервера
 		helpers.WriteErrorReponse(w, http.StatusInternalServerError, "SERVER_ERROR", errInternalServer.Error())
 		return
 	}
 
-	//сереализируем тело ответа
+	// сереализируем тело ответа
 	helpers.WriteSuccessfulResponse(w, http.StatusCreated, responseDTO)
 }
 
 func (th *TeamsHandlers) GetTeam(w http.ResponseWriter, r *http.Request) {
-	//проверяем GET метод
+	// проверяем GET метод
 	if r.Method != http.MethodGet {
 		helpers.WriteErrorReponse(w, http.StatusMethodNotAllowed, "WRONG_METHOD", errWrongMethod.Error())
 		return
 	}
 
-	//проверяем наличие квери параметра
+	// проверяем наличие квери параметра
 	teamName := r.URL.Query().Get("team_name")
 	if teamName == "" {
 		helpers.WriteErrorReponse(w, http.StatusBadRequest, "MISSING_PARAM", errMissingParam.Error())
@@ -87,14 +86,13 @@ func (th *TeamsHandlers) GetTeam(w http.ResponseWriter, r *http.Request) {
 
 	responseDTO, err := th.TeamService.GetTeamWithMembers(teamName)
 	if err != nil {
-
-		//если команда не существует
+		// если команда не существует
 		if errors.Is(err, service.ErrNoResourse) {
 			helpers.WriteErrorReponse(w, http.StatusNotFound, "NOT_FOUND", errNotFound.Error())
 			return
 		}
 
-		//если ошибка после работы сервисного слоя со стороны сервера
+		// если ошибка после работы сервисного слоя со стороны сервера
 		helpers.WriteErrorReponse(w, http.StatusInternalServerError, "SERVER_ERROR", errInternalServer.Error())
 		return
 	}

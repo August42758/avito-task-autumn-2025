@@ -2,8 +2,9 @@ package dto
 
 import (
 	"encoding/json"
-	"pr-service/internal/enums"
 	"time"
+
+	"pr-service/internal/enums"
 )
 
 type EmbendedError struct {
@@ -91,7 +92,7 @@ func NewPullRequestDTO(pullRequestId string, pullRequestName string, authorID st
 		Status:          enums.OPEN,
 	}
 
-	//максимум два ревьювера
+	// максимум два ревьювера
 	dto.AssignedReviewers = make([]string, 0, 2)
 
 	dto.AssignedReviewers = append(dto.AssignedReviewers, assignedReviewers...)

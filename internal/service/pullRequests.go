@@ -26,10 +26,9 @@ type PullRequestsService struct {
 }
 
 func (ps *PullRequestsService) AddPullRequest(reqPullRequest *dto.RequestPullrequestDTO) (*dto.ResponsePullrequestDTO, error) {
-
 	ps.Lgr.Info("starting pull request creation")
 
-	//начало транзакции
+	// начало транзакции
 	tx, err := ps.PullRequestsRepository.GetDB().Begin()
 	if err != nil {
 		ps.Lgr.With(
@@ -38,7 +37,7 @@ func (ps *PullRequestsService) AddPullRequest(reqPullRequest *dto.RequestPullreq
 		return nil, err
 	}
 
-	//если возникла ошибка в сервисной функции
+	// если возникла ошибка в сервисной функции
 	defer func() {
 		if err != nil {
 			ps.Lgr.With(
@@ -52,7 +51,7 @@ func (ps *PullRequestsService) AddPullRequest(reqPullRequest *dto.RequestPullreq
 		}
 	}()
 
-	//проверяем наличие автора
+	// проверяем наличие автора
 	author, err := ps.UsersRepository.GetUserById(tx, reqPullRequest.AuthorID)
 	if err != nil {
 		ps.Lgr.With(
@@ -65,7 +64,7 @@ func (ps *PullRequestsService) AddPullRequest(reqPullRequest *dto.RequestPullreq
 		return nil, err
 	}
 
-	//пользователи в команде автора
+	// пользователи в команде автора
 	users, err := ps.UsersRepository.GetUsersByTeam(tx, author.TeamName)
 	if err != nil {
 		ps.Lgr.With(
@@ -75,7 +74,7 @@ func (ps *PullRequestsService) AddPullRequest(reqPullRequest *dto.RequestPullreq
 		return nil, err
 	}
 
-	//удаляем автора из пользователей команды и всех неактивынх юзеров
+	// удаляем автора из пользователей команды и всех неактивынх юзеров
 	reviewerList := []*models.UserModel{}
 	for i := 0; i != len(users); i++ {
 		if users[i].Id == author.Id {
@@ -87,7 +86,7 @@ func (ps *PullRequestsService) AddPullRequest(reqPullRequest *dto.RequestPullreq
 		}
 	}
 
-	//добавляем pr
+	// добавляем pr
 	pullRequestModel := &models.PullRequestModel{
 		PullRequestId:   reqPullRequest.PullRequestId,
 		PullRequestName: reqPullRequest.PullRequestName,
@@ -106,27 +105,25 @@ func (ps *PullRequestsService) AddPullRequest(reqPullRequest *dto.RequestPullreq
 		return nil, err
 	}
 
-	//выбираем id reviewr
+	// выбираем id reviewr
 	reviewrIds := []string{}
 	if len(reviewerList) >= 2 {
-
-		//Выбираем первого ревьювера
+		// Выбираем первого ревьювера
 		reviewerIndex := rand.IntN(len(reviewerList))
 		reviewrIds = append(reviewrIds, reviewerList[reviewerIndex].Id)
 
-		//убираем выбранного ревьювера
+		// убираем выбранного ревьювера
 		reviewerList = append(reviewerList[:reviewerIndex], reviewerList[reviewerIndex+1:]...)
 
-		//Выбираем второго ревьювера
+		// Выбираем второго ревьювера
 		reviewerIndex = rand.IntN(len(reviewerList))
 		reviewrIds = append(reviewrIds, reviewerList[reviewerIndex].Id)
-
 	} else if len(reviewerList) == 1 {
 		reviewerIndex := rand.IntN(len(reviewerList))
 		reviewrIds = append(reviewrIds, reviewerList[reviewerIndex].Id)
 	}
 
-	//добавляем reviwers
+	// добавляем reviwers
 	for _, id := range reviewrIds {
 		reviwerModel := &models.ReviewerModel{
 			UserId:        id,
@@ -146,7 +143,7 @@ func (ps *PullRequestsService) AddPullRequest(reqPullRequest *dto.RequestPullreq
 		PR: dto.NewPullRequestDTO(reqPullRequest.PullRequestId, reqPullRequest.PullRequestName, reqPullRequest.AuthorID, reviewrIds...),
 	}
 
-	//завершаем транзакцию
+	// завершаем транзакцию
 	err = tx.Commit()
 	if err != nil {
 		ps.Lgr.With(
@@ -190,7 +187,7 @@ func (ps *PullRequestsService) MergePullRequest(id string) (*dto.ResponseMergedP
 		return nil, ErrNoReviewrs
 	}
 
-	//проверяем статус Pr до обращения к репозиторию
+	// проверяем статус Pr до обращения к репозиторию
 	if pullRequestModel.Status != enums.MERGED {
 		mergedAt := time.Now()
 		if err := ps.PullRequestsRepository.MergePullRequest(mergedAt, id); err != nil {
@@ -222,7 +219,6 @@ func (ps *PullRequestsService) MergePullRequest(id string) (*dto.ResponseMergedP
 			MergedAt:          *pullRequestModel.MergedAt,
 		},
 	}, nil
-
 }
 
 func (ps *PullRequestsService) ReassignReviewer(requestReassignDTO *dto.RequestReassignDTO) (*dto.ResponseReassignDTO, error) {
@@ -267,7 +263,7 @@ func (ps *PullRequestsService) ReassignReviewer(requestReassignDTO *dto.RequestR
 		return nil, err
 	}
 
-	//если у pr вообще не было ревьюверов, то пропускаем проверку старого ревьювера
+	// если у pr вообще не было ревьюверов, то пропускаем проверку старого ревьювера
 	prDoesntHaveReviewers := true
 	if len(oldReviewersIds) != 0 {
 		// проверяем наличие конкретного ревьювера
@@ -285,7 +281,7 @@ func (ps *PullRequestsService) ReassignReviewer(requestReassignDTO *dto.RequestR
 			return nil, ErrNoSuchReviewer
 		}
 
-		//у pr есть ревьюверы
+		// у pr есть ревьюверы
 		prDoesntHaveReviewers = false
 	}
 
@@ -311,8 +307,7 @@ func (ps *PullRequestsService) ReassignReviewer(requestReassignDTO *dto.RequestR
 
 	newReviewersList := []*models.UserModel{}
 	for _, teamUser := range temaUsers {
-
-		//пропускаем автора и неактивных юзеров
+		// пропускаем автора и неактивных юзеров
 		if teamUser.Id == author.Id || !teamUser.IsActive {
 			continue
 		}
@@ -322,7 +317,7 @@ func (ps *PullRequestsService) ReassignReviewer(requestReassignDTO *dto.RequestR
 			continue
 		}
 
-		//чтобы повторно не добавили второго ревьювера
+		// чтобы повторно не добавили второго ревьювера
 		isAssigned := false
 		for _, oldReviewerid := range oldReviewersIds {
 			if teamUser.Id == oldReviewerid && oldReviewerid != requestReassignDTO.OldUserId {
@@ -345,9 +340,8 @@ func (ps *PullRequestsService) ReassignReviewer(requestReassignDTO *dto.RequestR
 	// выбираем новый id reviewer и меняем
 	newReviewerID := newReviewersList[rand.IntN(len(newReviewersList))].Id
 
-	//меняем ревьювера, если до этого кто-то да был
+	// меняем ревьювера, если до этого кто-то да был
 	if !prDoesntHaveReviewers {
-
 		if err := ps.ReviewersRepository.ChangeReviewer(pullRequestModel.PullRequestId, requestReassignDTO.OldUserId, newReviewerID); err != nil {
 			ps.Lgr.With(
 				slog.String("reviewer_id", newReviewerID),
@@ -356,7 +350,7 @@ func (ps *PullRequestsService) ReassignReviewer(requestReassignDTO *dto.RequestR
 			return nil, err
 		}
 
-		//если ревьюверов не было
+		// если ревьюверов не было
 	} else {
 		newReviewerModel := &models.ReviewerModel{
 			UserId:        newReviewerID,

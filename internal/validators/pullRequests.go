@@ -28,7 +28,7 @@ func (v *PullRequestValidator) ValidatePullRequestId(id string) {
 		return
 	}
 
-	//ограничение из-за БД
+	// ограничение из-за БД
 	if utf8.RuneCountInString(id) > 255 {
 		v.IsValid = false
 		return

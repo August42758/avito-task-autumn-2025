@@ -9,14 +9,13 @@ import (
 )
 
 func NewTestDB(t *testing.T) *sql.DB {
-
-	//подключаемся к базе
+	// подключаемся к базе
 	db, err := sql.Open("postgres", "postgres://postgres:12345@localhost:5432/pr-service-test?sslmode=disable")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	//создаем таблицы
+	// создаем таблицы
 	script, err := os.ReadFile("./testdata/setup.sql")
 	if err != nil {
 		db.Close()
@@ -44,12 +43,10 @@ func DeleteDb(t *testing.T, db *sql.DB) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
 }
 
 // Вспомогательная функция для создания пользоватлея
 func RunQuery(t *testing.T, db *sql.DB, path string) {
-
 	script, err := os.ReadFile(path)
 	if err != nil {
 		db.Close()

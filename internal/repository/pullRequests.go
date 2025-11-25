@@ -32,7 +32,7 @@ func (pr *PullRequestsRepository) AddPullRequest(tx *sql.Tx, pullRequest *models
 		_, err = pr.Db.Exec(stmt, pullRequest.PullRequestId, pullRequest.PullRequestName, pullRequest.AuthorID, pullRequest.CreatedAt, 1)
 	}
 
-	//ошибка во время операции или из-за дубликата id pr
+	// ошибка во время операции или из-за дубликата id pr
 	if err != nil {
 		var sqlError *pq.Error
 		if errors.As(err, &sqlError) {
@@ -44,13 +44,12 @@ func (pr *PullRequestsRepository) AddPullRequest(tx *sql.Tx, pullRequest *models
 	}
 
 	return nil
-
 }
 
 func (pr *PullRequestsRepository) MergePullRequest(mergedAt time.Time, id string) error {
 	stmt := "UPDATE pull_requests SET status_id = $1, merged_at = $2  WHERE pull_request_id = $3"
 
-	//2 - статус MERGED
+	// 2 - статус MERGED
 	if _, err := pr.Db.Exec(stmt, 2, mergedAt, id); err != nil {
 		return err
 	}

@@ -15,7 +15,6 @@ type Config struct {
 }
 
 func Load(path string) (*Config, error) {
-
 	if path != "" {
 		// путь для докера
 		if err := godotenv.Load(path); err != nil {
@@ -35,7 +34,7 @@ func Load(path string) (*Config, error) {
 		DBPassword: os.Getenv("DB_PASSWORD"),
 	}
 
-	//если запуск в докере, то устанавливаем название хоста для БД как имя контейнера
+	// если запуск в докере, то устанавливаем название хоста для БД как имя контейнера
 	if os.Getenv("DOCKER") == "1" {
 		c.DBHost = "postgresql"
 	}

@@ -16,7 +16,6 @@ type StatsService struct {
 }
 
 func (ss *StatsService) GetStats() (*dto.StatsResponseDTO, error) {
-
 	totalPRs, err := ss.PullRequestsRepository.CountAllPullRequests()
 	if err != nil {
 		return nil, err

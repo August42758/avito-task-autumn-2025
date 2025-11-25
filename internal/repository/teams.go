@@ -27,7 +27,7 @@ func (tr *TeamsRepository) AddTeam(tx *sql.Tx, teamName string) error {
 		_, err = tr.Db.Exec(stmt, teamName)
 	}
 
-	//ошибка во время операции или из-за дубликата названия команды
+	// ошибка во время операции или из-за дубликата названия команды
 	if err != nil {
 		var sqlError *pq.Error
 		if errors.As(err, &sqlError) {

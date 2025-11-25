@@ -22,20 +22,20 @@ type PullRequestsHandlers struct {
 }
 
 func (ph *PullRequestsHandlers) AddPullRequest(w http.ResponseWriter, r *http.Request) {
-	//проверяем POST метод
+	// проверяем POST метод
 	if r.Method != http.MethodPost {
 		helpers.WriteErrorReponse(w, http.StatusMethodNotAllowed, "WRONG_METHOD", errWrongMethod.Error())
 		return
 	}
 
-	//чиатет тело запроса
+	// чиатет тело запроса
 	var requestDTO dto.RequestPullrequestDTO
 	if err := json.NewDecoder(r.Body).Decode(&requestDTO); err != nil {
 		helpers.WriteErrorReponse(w, http.StatusInternalServerError, "SERVER_ERROR", errInternalServer.Error())
 		return
 	}
 
-	//валидация
+	// валидация
 	validator := validators.NewPullRequestValidator()
 	validator.ValidatePullRequestId(requestDTO.PullRequestId)
 	validator.ValidatePullRequestName(requestDTO.PullRequestName)
@@ -45,46 +45,45 @@ func (ph *PullRequestsHandlers) AddPullRequest(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	//сервисная логика добавления pr
+	// сервисная логика добавления pr
 	responseDTO, err := ph.PullRequestService.AddPullRequest(&requestDTO)
 	if err != nil {
-
 		// если автор не найден
 		if errors.Is(err, service.ErrNoResourse) {
 			helpers.WriteErrorReponse(w, http.StatusNotFound, "NOT_FOUND", errNotFound.Error())
 			return
 		}
 
-		//если pr id уже существует
+		// если pr id уже существует
 		if errors.Is(err, service.ErrPRExists) {
 			helpers.WriteErrorReponse(w, http.StatusConflict, "PR_EXISTS", errPrExists.Error())
 			return
 		}
 
-		//если произошла ошибка в процессе сервисной логики
+		// если произошла ошибка в процессе сервисной логики
 		helpers.WriteErrorReponse(w, http.StatusInternalServerError, "SERVER_ERROR", errInternalServer.Error())
 		return
 	}
 
-	//сереализируем тело ответа
+	// сереализируем тело ответа
 	helpers.WriteSuccessfulResponse(w, http.StatusCreated, responseDTO)
 }
 
 func (ph *PullRequestsHandlers) MergePullRequest(w http.ResponseWriter, r *http.Request) {
-	//проверяем POST метод
+	// проверяем POST метод
 	if r.Method != http.MethodPost {
 		helpers.WriteErrorReponse(w, http.StatusMethodNotAllowed, "WRONG_METHOD", errWrongMethod.Error())
 		return
 	}
 
-	//чиатет тело запроса
+	// чиатет тело запроса
 	var requestDTO dto.PullRequestIdDTO
 	if err := json.NewDecoder(r.Body).Decode(&requestDTO); err != nil {
 		helpers.WriteErrorReponse(w, http.StatusInternalServerError, "SERVER_ERROR", errInternalServer.Error())
 		return
 	}
 
-	//валидация
+	// валидация
 	validator := validators.NewPullRequestValidator()
 	validator.ValidatePullRequestId(requestDTO.PullRequestId)
 	if !validator.IsValid {
@@ -92,46 +91,45 @@ func (ph *PullRequestsHandlers) MergePullRequest(w http.ResponseWriter, r *http.
 		return
 	}
 
-	//сервисная логика изменения статуса pr
+	// сервисная логика изменения статуса pr
 	responseDTO, err := ph.PullRequestService.MergePullRequest(requestDTO.PullRequestId)
 	if err != nil {
-
 		// если pr не найден
 		if errors.Is(err, service.ErrNoResourse) {
 			helpers.WriteErrorReponse(w, http.StatusNotFound, "NOT_FOUND", errNotFound.Error())
 			return
 		}
 
-		//если нет ревьеверов уже существует
+		// если нет ревьеверов уже существует
 		if errors.Is(err, service.ErrNoReviewrs) {
 			helpers.WriteErrorReponse(w, http.StatusBadRequest, "NO_REVIEWERS", errNoReviewrs.Error())
 			return
 		}
 
-		//если произошла ошибка в процессе сервисной логики
+		// если произошла ошибка в процессе сервисной логики
 		helpers.WriteErrorReponse(w, http.StatusInternalServerError, "SERVER_ERROR", errInternalServer.Error())
 		return
 	}
 
-	//сереализируем тело ответа
+	// сереализируем тело ответа
 	helpers.WriteSuccessfulResponse(w, http.StatusOK, responseDTO)
 }
 
 func (ph *PullRequestsHandlers) ReassignReviewer(w http.ResponseWriter, r *http.Request) {
-	//проверяем POST метод
+	// проверяем POST метод
 	if r.Method != http.MethodPost {
 		helpers.WriteErrorReponse(w, http.StatusMethodNotAllowed, "WRONG_METHOD", errWrongMethod.Error())
 		return
 	}
 
-	//валидируем тело запроса
+	// валидируем тело запроса
 	var requestDTO dto.RequestReassignDTO
 	if err := json.NewDecoder(r.Body).Decode(&requestDTO); err != nil {
 		helpers.WriteErrorReponse(w, http.StatusInternalServerError, "SERVER_ERROR", errInternalServer.Error())
 		return
 	}
 
-	//валидация
+	// валидация
 	validator := validators.NewPullRequestValidator()
 	validator.ValidatePullRequestId(requestDTO.PullRequestId)
 	validator.ValidateAuthorId(requestDTO.OldUserId) // это не автор, но пускай будет так
@@ -140,39 +138,38 @@ func (ph *PullRequestsHandlers) ReassignReviewer(w http.ResponseWriter, r *http.
 		return
 	}
 
-	//сервисная логика переназначения ревьювера
+	// сервисная логика переназначения ревьювера
 	responseDTO, err := ph.PullRequestService.ReassignReviewer(&requestDTO)
 	if err != nil {
-
-		//если pr или юзер не найден
+		// если pr или юзер не найден
 		if errors.Is(err, service.ErrNoResourse) {
 			helpers.WriteErrorReponse(w, http.StatusNotFound, "NOT_FOUND", errNotFound.Error())
 			return
 		}
 
-		//если pr уже имеет статус MERGED
+		// если pr уже имеет статус MERGED
 		if errors.Is(err, service.ErrPrMerged) {
 			helpers.WriteErrorReponse(w, http.StatusConflict, "PR_MERGED", errPrMerged.Error())
 			return
 		}
 
-		//если данный пользователь не назначен на данный pr
+		// если данный пользователь не назначен на данный pr
 		if errors.Is(err, service.ErrNoSuchReviewer) {
 			helpers.WriteErrorReponse(w, http.StatusConflict, "NOT_ASSIGNED", errNotAssigned.Error())
 			return
 		}
 
-		//если нет пользователей на назначение
+		// если нет пользователей на назначение
 		if errors.Is(err, service.ErrNoReviewrsToAssign) {
 			helpers.WriteErrorReponse(w, http.StatusConflict, "NO_CANDIDATE", errNoCandidate.Error())
 			return
 		}
 
-		//если произошла ошибка в процессе сервисной логики
+		// если произошла ошибка в процессе сервисной логики
 		helpers.WriteErrorReponse(w, http.StatusInternalServerError, "SERVER_ERROR", errInternalServer.Error())
 		return
 	}
 
-	//сереализируем тело ответа
+	// сереализируем тело ответа
 	helpers.WriteSuccessfulResponse(w, http.StatusOK, responseDTO)
 }

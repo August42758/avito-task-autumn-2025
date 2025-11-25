@@ -259,7 +259,7 @@ func (ps *PullRequestsService) ReassignReviewer(requestReassignDTO *dto.RequestR
 	}
 
 	// проверяем наличие ревьюверов у pr
-	reviewersIds, err := ps.ReviewersRepository.GetReviewersIdByPullRequestId(requestReassignDTO.PullRequestId)
+	oldReviewersIds, err := ps.ReviewersRepository.GetReviewersIdByPullRequestId(requestReassignDTO.PullRequestId)
 	if err != nil {
 		ps.Lgr.With(
 			slog.String("error", err.Error()),
@@ -267,19 +267,26 @@ func (ps *PullRequestsService) ReassignReviewer(requestReassignDTO *dto.RequestR
 		return nil, err
 	}
 
-	// проверяем наличие конкретного ревьювера
-	flag := false
-	for _, reviewerId := range reviewersIds {
-		if reviewerId == requestReassignDTO.OldUserId {
-			flag = true
-			break
+	//если у pr вообще не было ревьюверов, то пропускаем проверку старого ревьювера
+	prDoesntHaveReviewers := true
+	if len(oldReviewersIds) != 0 {
+		// проверяем наличие конкретного ревьювера
+		flag := false
+		for _, reviewerId := range oldReviewersIds {
+			if reviewerId == requestReassignDTO.OldUserId {
+				flag = true
+				break
+			}
 		}
-	}
-	if !flag {
-		ps.Lgr.With(
-			slog.String("reviewer_id", requestReassignDTO.OldUserId),
-		).Warn("reviewer is not assigned to this PR")
-		return nil, ErrNoSuchReviewer
+		if !flag {
+			ps.Lgr.With(
+				slog.String("reviewer_id", requestReassignDTO.OldUserId),
+			).Warn("reviewer is not assigned to this PR")
+			return nil, ErrNoSuchReviewer
+		}
+
+		//у pr есть ревьюверы
+		prDoesntHaveReviewers = false
 	}
 
 	// берем автора
@@ -293,7 +300,7 @@ func (ps *PullRequestsService) ReassignReviewer(requestReassignDTO *dto.RequestR
 	}
 
 	// пользователи в команде автора
-	users, err := ps.UsersRepository.GetUsersByTeam(nil, author.TeamName)
+	temaUsers, err := ps.UsersRepository.GetUsersByTeam(nil, author.TeamName)
 	if err != nil {
 		ps.Lgr.With(
 			slog.String("team", author.TeamName),
@@ -302,52 +309,67 @@ func (ps *PullRequestsService) ReassignReviewer(requestReassignDTO *dto.RequestR
 		return nil, err
 	}
 
-	reviewerList := []*models.UserModel{}
-	for i := 0; i != len(users); i++ {
-		//пропускаем автора
-		if users[i].Id == author.Id {
+	newReviewersList := []*models.UserModel{}
+	for _, teamUser := range temaUsers {
+
+		//пропускаем автора и неактивных юзеров
+		if teamUser.Id == author.Id || !teamUser.IsActive {
 			continue
 		}
 
-		//пропускаем неактивных юзеров
-		if !users[i].IsActive {
+		// пропускаем старого юзера, если у PR вообще нету ревьевров
+		if !prDoesntHaveReviewers && teamUser.Id == requestReassignDTO.OldUserId {
 			continue
 		}
 
-		// пропускаем старого ревьювера
-		if users[i].Id == requestReassignDTO.OldUserId {
-			continue
-		}
-
-		// пропускаем уже назначенных ревьюверов (кроме старого, которого заменяем)
-		isAlreadyReviewer := false
-		for _, reviewerId := range reviewersIds {
-			if users[i].Id == reviewerId && reviewerId != requestReassignDTO.OldUserId {
-				isAlreadyReviewer = true
+		//чтобы повторно не добавили второго ревьювера
+		isAssigned := false
+		for _, oldReviewerid := range oldReviewersIds {
+			if teamUser.Id == oldReviewerid && oldReviewerid != requestReassignDTO.OldUserId {
+				isAssigned = true
 				break
 			}
 		}
 
-		if !isAlreadyReviewer {
-			reviewerList = append(reviewerList, users[i])
+		if !isAssigned {
+			newReviewersList = append(newReviewersList, teamUser)
 		}
-
 	}
 
 	// проверяем наличие ревьюверов
-	if len(reviewerList) == 0 {
+	if len(newReviewersList) == 0 {
 		ps.Lgr.Warn("no available replacement candidates")
 		return nil, ErrNoReviewrsToAssign
 	}
 
 	// выбираем новый id reviewer и меняем
-	newReviewerID := reviewerList[rand.IntN(len(reviewerList))].Id
-	if err := ps.ReviewersRepository.ChangeReviewer(pullRequestModel.PullRequestId, requestReassignDTO.OldUserId, newReviewerID); err != nil {
-		ps.Lgr.With(
-			slog.String("reviewer_id", newReviewerID),
-			slog.String("error", err.Error()),
-		).Error("failed to change reviewer", slog.String("reviewer_id", newReviewerID), slog.String("error", err.Error()))
-		return nil, err
+	newReviewerID := newReviewersList[rand.IntN(len(newReviewersList))].Id
+
+	//меняем ревьювера, если до этого кто-то да был
+	if !prDoesntHaveReviewers {
+
+		if err := ps.ReviewersRepository.ChangeReviewer(pullRequestModel.PullRequestId, requestReassignDTO.OldUserId, newReviewerID); err != nil {
+			ps.Lgr.With(
+				slog.String("reviewer_id", newReviewerID),
+				slog.String("error", err.Error()),
+			).Error("failed to change reviewer", slog.String("reviewer_id", newReviewerID), slog.String("error", err.Error()))
+			return nil, err
+		}
+
+		//если ревьюверов не было
+	} else {
+		newReviewerModel := &models.ReviewerModel{
+			UserId:        newReviewerID,
+			PullRequestId: requestReassignDTO.PullRequestId,
+		}
+
+		if err := ps.ReviewersRepository.AddReviewer(nil, newReviewerModel); err != nil {
+			ps.Lgr.With(
+				slog.String("reviewer_id", newReviewerID),
+				slog.String("error", err.Error()),
+			).Error("failed to change reviewer", slog.String("reviewer_id", newReviewerID), slog.String("error", err.Error()))
+			return nil, err
+		}
 	}
 
 	// получаем новый список ревьюверов

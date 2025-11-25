@@ -63,20 +63,21 @@ func (us *UsersService) GetPullRequestsByUserId(id string) (*dto.UserPullRequest
 	us.Lgr.Info("retrieving pull requests for user")
 
 	// проверяем наличие пользователя в бд
-	_, err := us.UsersRepository.GetUserById(nil, id)
+	isExists, err := us.UsersRepository.IsExist(nil, id)
 	if err != nil {
 		us.Lgr.With(
 			slog.String("user_id", id),
 			slog.String("error", err.Error()),
 		).Error("user not found")
-		if errors.Is(err, repository.ErrNoRecord) {
-			return nil, ErrNoResourse
-		}
-		return nil, err
+	}
+
+	if !isExists {
+		us.Lgr.Error("user not found")
+		return nil, ErrNoResourse
 	}
 
 	// получаем PR, на которые назначен пользователь
-	pullRequestIds, err := us.ReviewersRepository.GetPullRequestsByUserId(id)
+	pullRequestIds, err := us.ReviewersRepository.GetPullRequestIDsWithReviewersByUserId(id)
 	if err != nil {
 		us.Lgr.With(
 			slog.String("user_id", id),
@@ -86,7 +87,10 @@ func (us *UsersService) GetPullRequestsByUserId(id string) (*dto.UserPullRequest
 	}
 
 	// формируем DTO
-	responseDTO := &dto.UserPullRequestsDTO{UserId: id, PullRequests: []*dto.UserPullRequestDTO{}}
+	responseDTO := &dto.UserPullRequestsDTO{
+		UserId:       id,
+		PullRequests: make([]*dto.UserPullRequestDTO, 0, len(pullRequestIds)),
+	}
 	for _, pullRequestId := range pullRequestIds {
 		pullRequestModel, err := us.PullRequestsRepository.GetPullRequestById(pullRequestId)
 		if err != nil {

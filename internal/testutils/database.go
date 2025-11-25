@@ -5,12 +5,24 @@ import (
 	"os"
 	"testing"
 
+	"pr-service/internal/config"
+	"pr-service/internal/database"
+
 	_ "github.com/lib/pq"
 )
 
 func NewTestDB(t *testing.T) *sql.DB {
+	// загрузка .env
+	cfg, err := config.Load("../.env")
+	if err != nil {
+		t.Fatal(err)
+		return nil
+	}
+
+	dbAddr := database.GetDbAddres(cfg.TestDBHost, cfg.TestDBPort, cfg.TestDBName, cfg.TestDBUser, cfg.TestDBPassword)
+
 	// подключаемся к базе
-	db, err := sql.Open("postgres", "postgres://postgres:12345@localhost:5432/pr-service-test?sslmode=disable")
+	db, err := database.ConnectDB(dbAddr)
 	if err != nil {
 		t.Fatal(err)
 	}

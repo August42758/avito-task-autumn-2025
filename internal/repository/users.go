@@ -15,6 +15,7 @@ type IUsersRepository interface {
 	GetUsersByTeam(tx *sql.Tx, teamName string) ([]*models.UserModel, error)
 	GetUserById(tx *sql.Tx, id string) (*models.UserModel, error)
 	UpdateUserIsActive(id string, isActive bool) error
+	IsExist(tx *sql.Tx, id string) (bool, error)
 }
 
 type UsersRepository struct {
@@ -110,4 +111,22 @@ func (us *UsersRepository) UpdateUserIsActive(id string, isActive bool) error {
 	}
 
 	return nil
+}
+
+func (tr *UsersRepository) IsExist(tx *sql.Tx, id string) (bool, error) {
+	stmt := `SELECT EXISTS(SELECT user_id FROM users WHERE user_id = $1)`
+
+	var err error
+	var isExist bool
+	if tx != nil {
+		err = tx.QueryRow(stmt, id).Scan(&isExist)
+	} else {
+		err = tr.Db.QueryRow(stmt, id).Scan(&isExist)
+	}
+
+	if err != nil {
+		return false, err
+	}
+
+	return isExist, nil
 }

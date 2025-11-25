@@ -22,7 +22,7 @@ type TeamsService struct {
 func (ts *TeamsService) AddTeamWithMembers(team *dto.TeamDTO) (*dto.ResponseTeamDTO, error) {
 	ts.Lgr.Info("starting team creation with members")
 
-	// создаем транзакцию
+	// создаем транзакцию, так как добавялем команду и ее участников
 	tx, err := ts.TeamsRepository.GetDB().Begin()
 	if err != nil {
 		ts.Lgr.With(
@@ -118,26 +118,21 @@ func (ts *TeamsService) GetTeamWithMembers(teamName string) (*dto.TeamDTO, error
 	}
 
 	// формируем DTO для транспортного слоя
-	teamDTO := &dto.TeamDTO{
+	responseDTO := &dto.TeamDTO{
 		TeamName: teamName,
 		Members:  make([]*dto.TeamMemberDTO, 0, len(userModels)),
 	}
 
-	activeMembers := 0
 	for _, user := range userModels {
 		member := &dto.TeamMemberDTO{
 			UserId:   user.Id,
 			Username: user.Username,
 			IsActive: user.IsActive,
 		}
-		teamDTO.Members = append(teamDTO.Members, member)
-
-		if user.IsActive {
-			activeMembers++
-		}
+		responseDTO.Members = append(responseDTO.Members, member)
 	}
 
 	ts.Lgr.Info("team retrieved successfully")
 
-	return teamDTO, nil
+	return responseDTO, nil
 }

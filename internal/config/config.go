@@ -12,6 +12,12 @@ type Config struct {
 	DBName     string `env:"DB_NAME"`
 	DBUser     string `env:"DB_USER"`
 	DBPassword string `env:"DB_PASSWORD"`
+
+	TestDBHost     string `env:"TEST_DB_HOST"`
+	TestDBPort     string `env:"TEST_DB_PORT"`
+	TestDBName     string `env:"TEST_DB_NAME"`
+	TestDBUser     string `env:"TEST_DB_USER"`
+	TestDBPassword string `env:"TEST_DB_PASSWORD"`
 }
 
 func Load(path string) (*Config, error) {
@@ -23,7 +29,7 @@ func Load(path string) (*Config, error) {
 		}
 	} else {
 		// дефолтный путь для локального запуска
-		if err := godotenv.Load("././.env"); err != nil {
+		if err := godotenv.Load("../../.env"); err != nil {
 			return nil, err
 		}
 	}
@@ -33,6 +39,12 @@ func Load(path string) (*Config, error) {
 		DBName:     os.Getenv("DB_NAME"),
 		DBUser:     os.Getenv("DB_USER"),
 		DBPassword: os.Getenv("DB_PASSWORD"),
+
+		TestDBHost:     os.Getenv("TEST_DB_HOST"),
+		TestDBPort:     os.Getenv("TEST_DB_PORT"),
+		TestDBName:     os.Getenv("TEST_DB_NAME"),
+		TestDBUser:     os.Getenv("TEST_DB_USER"),
+		TestDBPassword: os.Getenv("TEST_DB_PASSWORD"),
 	}
 
 	//если запуск в докере, то устанавливаем название хоста для БД как имя контейнера

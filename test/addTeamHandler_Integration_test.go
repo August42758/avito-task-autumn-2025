@@ -16,6 +16,7 @@ import (
 	"pr-service/internal/service"
 	"pr-service/internal/testhelpers"
 	"pr-service/internal/testutils"
+	"pr-service/internal/validators"
 )
 
 func TestAddTeamHandler(t *testing.T) {
@@ -36,9 +37,12 @@ func TestAddTeamHandler(t *testing.T) {
 		Lgr:             lgr,
 	}
 
+	validator := validators.NewValidator()
+
 	// создаем сам хендлер
 	teamHandler := handlers.TeamsHandlers{
 		TeamService: teamService,
+		Validator:   validator,
 	}
 
 	t.Run("successful team creation", func(t *testing.T) {

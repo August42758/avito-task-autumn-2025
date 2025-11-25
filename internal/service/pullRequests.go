@@ -28,12 +28,12 @@ type PullRequestsService struct {
 func (ps *PullRequestsService) AddPullRequest(reqPullRequest *dto.RequestPullrequestDTO) (*dto.ResponsePullrequestDTO, error) {
 	ps.Lgr.Info("starting pull request creation")
 
-	// начало транзакции
+	// начало транзакции, так как добавляем pr и его ревьюверов
 	tx, err := ps.PullRequestsRepository.GetDB().Begin()
 	if err != nil {
 		ps.Lgr.With(
 			slog.String("error", err.Error()),
-		).Error("failed to begin transaction", slog.String("error", err.Error()))
+		).Error("failed to begin transaction")
 		return nil, err
 	}
 
@@ -57,7 +57,7 @@ func (ps *PullRequestsService) AddPullRequest(reqPullRequest *dto.RequestPullreq
 		ps.Lgr.With(
 			slog.String("author_id", reqPullRequest.AuthorID),
 			slog.String("error", err.Error()),
-		).Error("author not found", slog.String("author_id", reqPullRequest.AuthorID), slog.String("error", err.Error()))
+		).Error("author not found")
 		if errors.Is(err, repository.ErrNoRecord) {
 			return nil, ErrNoResourse
 		}
@@ -70,20 +70,18 @@ func (ps *PullRequestsService) AddPullRequest(reqPullRequest *dto.RequestPullreq
 		ps.Lgr.With(
 			slog.String("team", author.TeamName),
 			slog.String("error", err.Error()),
-		).Error("failed to get team users", slog.String("team", author.TeamName), slog.String("error", err.Error()))
+		).Error("failed to get team users")
 		return nil, err
 	}
 
 	// удаляем автора из пользователей команды и всех неактивынх юзеров
-	reviewerList := []*models.UserModel{}
+	availableReviewers := []*models.UserModel{}
 	for i := 0; i != len(users); i++ {
-		if users[i].Id == author.Id {
+		if users[i].Id == author.Id || !users[i].IsActive {
 			continue
 		}
 
-		if users[i].IsActive {
-			reviewerList = append(reviewerList, users[i])
-		}
+		availableReviewers = append(availableReviewers, users[i])
 	}
 
 	// добавляем pr
@@ -106,25 +104,25 @@ func (ps *PullRequestsService) AddPullRequest(reqPullRequest *dto.RequestPullreq
 	}
 
 	// выбираем id reviewr
-	reviewrIds := []string{}
-	if len(reviewerList) >= 2 {
+	newReviewrIds := []string{}
+	if len(availableReviewers) >= 2 {
 		// Выбираем первого ревьювера
-		reviewerIndex := rand.IntN(len(reviewerList))
-		reviewrIds = append(reviewrIds, reviewerList[reviewerIndex].Id)
+		currentReviewerIndex := rand.IntN(len(availableReviewers))
+		newReviewrIds = append(newReviewrIds, availableReviewers[currentReviewerIndex].Id)
 
 		// убираем выбранного ревьювера
-		reviewerList = append(reviewerList[:reviewerIndex], reviewerList[reviewerIndex+1:]...)
+		availableReviewers = append(availableReviewers[:currentReviewerIndex], availableReviewers[currentReviewerIndex+1:]...)
 
 		// Выбираем второго ревьювера
-		reviewerIndex = rand.IntN(len(reviewerList))
-		reviewrIds = append(reviewrIds, reviewerList[reviewerIndex].Id)
-	} else if len(reviewerList) == 1 {
-		reviewerIndex := rand.IntN(len(reviewerList))
-		reviewrIds = append(reviewrIds, reviewerList[reviewerIndex].Id)
+		currentReviewerIndex = rand.IntN(len(availableReviewers))
+		newReviewrIds = append(newReviewrIds, availableReviewers[currentReviewerIndex].Id)
+	} else if len(availableReviewers) == 1 {
+		currentReviewerIndex := rand.IntN(len(availableReviewers))
+		newReviewrIds = append(newReviewrIds, availableReviewers[currentReviewerIndex].Id)
 	}
 
 	// добавляем reviwers
-	for _, id := range reviewrIds {
+	for _, id := range newReviewrIds {
 		reviwerModel := &models.ReviewerModel{
 			UserId:        id,
 			PullRequestId: reqPullRequest.PullRequestId,
@@ -140,7 +138,7 @@ func (ps *PullRequestsService) AddPullRequest(reqPullRequest *dto.RequestPullreq
 	}
 
 	responseDTO := &dto.ResponsePullrequestDTO{
-		PR: dto.NewPullRequestDTO(reqPullRequest.PullRequestId, reqPullRequest.PullRequestName, reqPullRequest.AuthorID, reviewrIds...),
+		PR: dto.NewPullRequestDTO(reqPullRequest.PullRequestId, reqPullRequest.PullRequestName, reqPullRequest.AuthorID, newReviewrIds...),
 	}
 
 	// завершаем транзакцию
@@ -158,7 +156,7 @@ func (ps *PullRequestsService) AddPullRequest(reqPullRequest *dto.RequestPullreq
 }
 
 func (ps *PullRequestsService) MergePullRequest(id string) (*dto.ResponseMergedPullRequestDTO, error) {
-	ps.Lgr.Info("starting merge a pull request")
+	ps.Lgr.With().Info("starting merge a pull request")
 
 	// проверяем наличие pr
 	pullRequestModel, err := ps.PullRequestsRepository.GetPullRequestById(id)
@@ -237,15 +235,16 @@ func (ps *PullRequestsService) ReassignReviewer(requestReassignDTO *dto.RequestR
 	}
 
 	// проверяем наличие юзера
-	if _, err := ps.UsersRepository.GetUserById(nil, requestReassignDTO.OldUserId); err != nil {
+	isExist, err := ps.UsersRepository.IsExist(nil, requestReassignDTO.OldUserId)
+	if err != nil {
 		ps.Lgr.With(
 			slog.String("reviewer_id", requestReassignDTO.OldUserId),
 			slog.String("error", err.Error()),
-		).Error("old reviewer not found")
-		if errors.Is(err, repository.ErrNoRecord) {
-			return nil, ErrNoResourse
-		}
-		return nil, err
+		).Error("failed to get an old reviewer")
+	}
+
+	if !isExist {
+		return nil, ErrNoResourse
 	}
 
 	// проверяем статус pr
@@ -255,7 +254,7 @@ func (ps *PullRequestsService) ReassignReviewer(requestReassignDTO *dto.RequestR
 	}
 
 	// проверяем наличие ревьюверов у pr
-	oldReviewersIds, err := ps.ReviewersRepository.GetReviewersIdByPullRequestId(requestReassignDTO.PullRequestId)
+	oldReviewerIds, err := ps.ReviewersRepository.GetReviewersIdByPullRequestId(requestReassignDTO.PullRequestId)
 	if err != nil {
 		ps.Lgr.With(
 			slog.String("error", err.Error()),
@@ -265,10 +264,10 @@ func (ps *PullRequestsService) ReassignReviewer(requestReassignDTO *dto.RequestR
 
 	// если у pr вообще не было ревьюверов, то пропускаем проверку старого ревьювера
 	prDoesntHaveReviewers := true
-	if len(oldReviewersIds) != 0 {
+	if len(oldReviewerIds) != 0 {
 		// проверяем наличие конкретного ревьювера
 		flag := false
-		for _, reviewerId := range oldReviewersIds {
+		for _, reviewerId := range oldReviewerIds {
 			if reviewerId == requestReassignDTO.OldUserId {
 				flag = true
 				break
@@ -319,7 +318,7 @@ func (ps *PullRequestsService) ReassignReviewer(requestReassignDTO *dto.RequestR
 
 		// чтобы повторно не добавили второго ревьювера
 		isAssigned := false
-		for _, oldReviewerid := range oldReviewersIds {
+		for _, oldReviewerid := range oldReviewerIds {
 			if teamUser.Id == oldReviewerid && oldReviewerid != requestReassignDTO.OldUserId {
 				isAssigned = true
 				break
@@ -346,7 +345,7 @@ func (ps *PullRequestsService) ReassignReviewer(requestReassignDTO *dto.RequestR
 			ps.Lgr.With(
 				slog.String("reviewer_id", newReviewerID),
 				slog.String("error", err.Error()),
-			).Error("failed to change reviewer", slog.String("reviewer_id", newReviewerID), slog.String("error", err.Error()))
+			).Error("failed to change reviewer")
 			return nil, err
 		}
 
@@ -361,7 +360,7 @@ func (ps *PullRequestsService) ReassignReviewer(requestReassignDTO *dto.RequestR
 			ps.Lgr.With(
 				slog.String("reviewer_id", newReviewerID),
 				slog.String("error", err.Error()),
-			).Error("failed to change reviewer", slog.String("reviewer_id", newReviewerID), slog.String("error", err.Error()))
+			).Error("failed to add reviewer")
 			return nil, err
 		}
 	}

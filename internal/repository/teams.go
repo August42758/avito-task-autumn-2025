@@ -45,8 +45,11 @@ func (tr *TeamsRepository) IsExist(teamName string) (bool, error) {
 	stmt := `SELECT EXISTS(SELECT team_name FROM teams WHERE team_name = $1)`
 
 	var isExist bool
-	err := tr.Db.QueryRow(stmt, teamName).Scan(&isExist)
-	return isExist, err
+	if err := tr.Db.QueryRow(stmt, teamName).Scan(&isExist); err != nil {
+		return false, err
+	}
+
+	return isExist, nil
 }
 
 func (tr *TeamsRepository) GetDB() *sql.DB {

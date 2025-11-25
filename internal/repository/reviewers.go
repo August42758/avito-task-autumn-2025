@@ -11,7 +11,7 @@ type IReviewersRepository interface {
 	AddReviewer(tx *sql.Tx, reviewer *models.ReviewerModel) error
 	GetReviewersIdByPullRequestId(id string) ([]string, error)
 	ChangeReviewer(pullRequestId, oldReviewerId, newReviewerId string) error
-	GetPullRequestsByUserId(id string) ([]string, error)
+	GetPullRequestIDsWithReviewersByUserId(id string) ([]string, error)
 	CountAssignmentsByUser() (map[string]int, error)
 }
 
@@ -74,7 +74,7 @@ func (rr *ReviewersRepository) ChangeReviewer(pullRequestId, oldReviewerId, newR
 	return nil
 }
 
-func (rr *ReviewersRepository) GetPullRequestsByUserId(id string) ([]string, error) {
+func (rr *ReviewersRepository) GetPullRequestIDsWithReviewersByUserId(id string) ([]string, error) {
 	stmt := `SELECT reviewers.pull_request_id 
     FROM reviewers 
     JOIN pull_requests ON reviewers.pull_request_id = pull_requests.pull_request_id

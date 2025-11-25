@@ -85,6 +85,7 @@ func main() {
 		UsersRepository:        usersRepository,
 		ReviewersRepository:    reviewersRepository,
 		PullRequestsRepository: pullRequestsRepository,
+		Lgr:                    lgr,
 	}
 
 	validator := validators.NewValidator()

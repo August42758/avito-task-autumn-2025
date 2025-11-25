@@ -23,14 +23,14 @@ type UsersHandlers struct {
 func (uh *UsersHandlers) SetIsActive(w http.ResponseWriter, r *http.Request) {
 	//проверяем POST метод
 	if r.Method != http.MethodPost {
-		helpers.WriteErrorReponse(w, http.StatusMethodNotAllowed, "WRONG_METHOD", WRONG_METHOD)
+		helpers.WriteErrorReponse(w, http.StatusMethodNotAllowed, "WRONG_METHOD", errWrongMethod.Error())
 		return
 	}
 
 	//читаем тело запроса
 	var requestDTO dto.IsActiveUserDTO
 	if err := json.NewDecoder(r.Body).Decode(&requestDTO); err != nil {
-		helpers.WriteErrorReponse(w, http.StatusInternalServerError, "SERVER_ERROR", SERVER_ERROR)
+		helpers.WriteErrorReponse(w, http.StatusInternalServerError, "SERVER_ERROR", errInternalServer.Error())
 		return
 	}
 
@@ -38,7 +38,7 @@ func (uh *UsersHandlers) SetIsActive(w http.ResponseWriter, r *http.Request) {
 	validator := validators.NewTeamMemberValidator()
 	validator.ValidateId(requestDTO.Id)
 	if !validator.IsValid {
-		helpers.WriteErrorReponse(w, http.StatusBadRequest, "WRONG_DATA_INPUT", WRONG_DATA_INPUT)
+		helpers.WriteErrorReponse(w, http.StatusBadRequest, "WRONG_DATA_INPUT", errWrongDataInput.Error())
 		return
 	}
 
@@ -47,12 +47,12 @@ func (uh *UsersHandlers) SetIsActive(w http.ResponseWriter, r *http.Request) {
 
 		//если пользователя не существует
 		if errors.Is(err, service.ErrNoResourse) {
-			helpers.WriteErrorReponse(w, http.StatusNotFound, "NOT_FOUND", NOT_FOUND)
+			helpers.WriteErrorReponse(w, http.StatusNotFound, "NOT_FOUND", errNotFound.Error())
 			return
 		}
 
 		//если ошибка после работы сервисного слоя со стороны сервера
-		helpers.WriteErrorReponse(w, http.StatusInternalServerError, "SERVER_ERROR", SERVER_ERROR)
+		helpers.WriteErrorReponse(w, http.StatusInternalServerError, "SERVER_ERROR", errInternalServer.Error())
 		return
 	}
 
@@ -63,14 +63,14 @@ func (uh *UsersHandlers) SetIsActive(w http.ResponseWriter, r *http.Request) {
 func (uh *UsersHandlers) GetReview(w http.ResponseWriter, r *http.Request) {
 	//проверяем GET метод
 	if r.Method != http.MethodGet {
-		helpers.WriteErrorReponse(w, http.StatusMethodNotAllowed, "WRONG_METHOD", WRONG_METHOD)
+		helpers.WriteErrorReponse(w, http.StatusMethodNotAllowed, "WRONG_METHOD", errWrongMethod.Error())
 		return
 	}
 
 	//проверяем наличие квери параметра
 	userId := r.URL.Query().Get("user_id")
 	if userId == "" {
-		helpers.WriteErrorReponse(w, http.StatusBadRequest, "MISSING_PARAM", MISSING_PARAM)
+		helpers.WriteErrorReponse(w, http.StatusBadRequest, "MISSING_PARAM", errMissingParam.Error())
 		return
 	}
 
@@ -80,12 +80,12 @@ func (uh *UsersHandlers) GetReview(w http.ResponseWriter, r *http.Request) {
 
 		//если пользователя не существует
 		if errors.Is(err, service.ErrNoResourse) {
-			helpers.WriteErrorReponse(w, http.StatusNotFound, "NOT_FOUND", NOT_FOUND)
+			helpers.WriteErrorReponse(w, http.StatusNotFound, "NOT_FOUND", errNotFound.Error())
 			return
 		}
 
 		//если ошибка после работы сервисного слоя со стороны сервера
-		helpers.WriteErrorReponse(w, http.StatusInternalServerError, "SERVER_ERROR", SERVER_ERROR)
+		helpers.WriteErrorReponse(w, http.StatusInternalServerError, "SERVER_ERROR", errInternalServer.Error())
 		return
 	}
 

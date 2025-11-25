@@ -24,14 +24,14 @@ type PullRequestsHandlers struct {
 func (ph *PullRequestsHandlers) AddPullRequest(w http.ResponseWriter, r *http.Request) {
 	//проверяем POST метод
 	if r.Method != http.MethodPost {
-		helpers.WriteErrorReponse(w, http.StatusMethodNotAllowed, "WRONG_METHOD", WRONG_METHOD)
+		helpers.WriteErrorReponse(w, http.StatusMethodNotAllowed, "WRONG_METHOD", errWrongMethod.Error())
 		return
 	}
 
 	//чиатет тело запроса
 	var requestDTO dto.RequestPullrequestDTO
 	if err := json.NewDecoder(r.Body).Decode(&requestDTO); err != nil {
-		helpers.WriteErrorReponse(w, http.StatusInternalServerError, "SERVER_ERROR", SERVER_ERROR)
+		helpers.WriteErrorReponse(w, http.StatusInternalServerError, "SERVER_ERROR", errInternalServer.Error())
 		return
 	}
 
@@ -41,7 +41,7 @@ func (ph *PullRequestsHandlers) AddPullRequest(w http.ResponseWriter, r *http.Re
 	validator.ValidatePullRequestName(requestDTO.PullRequestName)
 	validator.ValidateAuthorId(requestDTO.AuthorID)
 	if !validator.IsValid {
-		helpers.WriteErrorReponse(w, http.StatusBadRequest, "WRONG_DATA_INPUT", WRONG_DATA_INPUT)
+		helpers.WriteErrorReponse(w, http.StatusBadRequest, "WRONG_DATA_INPUT", errWrongDataInput.Error())
 		return
 	}
 
@@ -51,18 +51,18 @@ func (ph *PullRequestsHandlers) AddPullRequest(w http.ResponseWriter, r *http.Re
 
 		// если автор не найден
 		if errors.Is(err, service.ErrNoResourse) {
-			helpers.WriteErrorReponse(w, http.StatusNotFound, "NOT_FOUND", NOT_FOUND)
+			helpers.WriteErrorReponse(w, http.StatusNotFound, "NOT_FOUND", errNotFound.Error())
 			return
 		}
 
 		//если pr id уже существует
 		if errors.Is(err, service.ErrPRExists) {
-			helpers.WriteErrorReponse(w, http.StatusConflict, "PR_EXISTS", PR_EXISTS)
+			helpers.WriteErrorReponse(w, http.StatusConflict, "PR_EXISTS", errPrExists.Error())
 			return
 		}
 
 		//если произошла ошибка в процессе сервисной логики
-		helpers.WriteErrorReponse(w, http.StatusInternalServerError, "SERVER_ERROR", SERVER_ERROR)
+		helpers.WriteErrorReponse(w, http.StatusInternalServerError, "SERVER_ERROR", errInternalServer.Error())
 		return
 	}
 
@@ -73,14 +73,14 @@ func (ph *PullRequestsHandlers) AddPullRequest(w http.ResponseWriter, r *http.Re
 func (ph *PullRequestsHandlers) MergePullRequest(w http.ResponseWriter, r *http.Request) {
 	//проверяем POST метод
 	if r.Method != http.MethodPost {
-		helpers.WriteErrorReponse(w, http.StatusMethodNotAllowed, "WRONG_METHOD", WRONG_METHOD)
+		helpers.WriteErrorReponse(w, http.StatusMethodNotAllowed, "WRONG_METHOD", errWrongMethod.Error())
 		return
 	}
 
 	//чиатет тело запроса
 	var requestDTO dto.PullRequestIdDTO
 	if err := json.NewDecoder(r.Body).Decode(&requestDTO); err != nil {
-		helpers.WriteErrorReponse(w, http.StatusInternalServerError, "SERVER_ERROR", SERVER_ERROR)
+		helpers.WriteErrorReponse(w, http.StatusInternalServerError, "SERVER_ERROR", errInternalServer.Error())
 		return
 	}
 
@@ -88,7 +88,7 @@ func (ph *PullRequestsHandlers) MergePullRequest(w http.ResponseWriter, r *http.
 	validator := validators.NewPullRequestValidator()
 	validator.ValidatePullRequestId(requestDTO.PullRequestId)
 	if !validator.IsValid {
-		helpers.WriteErrorReponse(w, http.StatusBadRequest, "WRONG_DATA_INPUT", WRONG_DATA_INPUT)
+		helpers.WriteErrorReponse(w, http.StatusBadRequest, "WRONG_DATA_INPUT", errWrongDataInput.Error())
 		return
 	}
 
@@ -98,18 +98,18 @@ func (ph *PullRequestsHandlers) MergePullRequest(w http.ResponseWriter, r *http.
 
 		// если pr не найден
 		if errors.Is(err, service.ErrNoResourse) {
-			helpers.WriteErrorReponse(w, http.StatusNotFound, "NOT_FOUND", NOT_FOUND)
+			helpers.WriteErrorReponse(w, http.StatusNotFound, "NOT_FOUND", errNotFound.Error())
 			return
 		}
 
 		//если нет ревьеверов уже существует
 		if errors.Is(err, service.ErrNoReviewrs) {
-			helpers.WriteErrorReponse(w, http.StatusBadRequest, "NO_REVIEWERS", NO_REVIEWERS)
+			helpers.WriteErrorReponse(w, http.StatusBadRequest, "NO_REVIEWERS", errNoReviewrs.Error())
 			return
 		}
 
 		//если произошла ошибка в процессе сервисной логики
-		helpers.WriteErrorReponse(w, http.StatusInternalServerError, "SERVER_ERROR", SERVER_ERROR)
+		helpers.WriteErrorReponse(w, http.StatusInternalServerError, "SERVER_ERROR", errInternalServer.Error())
 		return
 	}
 
@@ -120,14 +120,14 @@ func (ph *PullRequestsHandlers) MergePullRequest(w http.ResponseWriter, r *http.
 func (ph *PullRequestsHandlers) ReassignReviewer(w http.ResponseWriter, r *http.Request) {
 	//проверяем POST метод
 	if r.Method != http.MethodPost {
-		helpers.WriteErrorReponse(w, http.StatusMethodNotAllowed, "WRONG_METHOD", WRONG_METHOD)
+		helpers.WriteErrorReponse(w, http.StatusMethodNotAllowed, "WRONG_METHOD", errWrongMethod.Error())
 		return
 	}
 
 	//валидируем тело запроса
 	var requestDTO dto.RequestReassignDTO
 	if err := json.NewDecoder(r.Body).Decode(&requestDTO); err != nil {
-		helpers.WriteErrorReponse(w, http.StatusInternalServerError, "SERVER_ERROR", SERVER_ERROR)
+		helpers.WriteErrorReponse(w, http.StatusInternalServerError, "SERVER_ERROR", errInternalServer.Error())
 		return
 	}
 
@@ -136,7 +136,7 @@ func (ph *PullRequestsHandlers) ReassignReviewer(w http.ResponseWriter, r *http.
 	validator.ValidatePullRequestId(requestDTO.PullRequestId)
 	validator.ValidateAuthorId(requestDTO.OldUserId) // это не автор, но пускай будет так
 	if !validator.IsValid {
-		helpers.WriteErrorReponse(w, http.StatusBadRequest, "WRONG_DATA_INPUT", WRONG_DATA_INPUT)
+		helpers.WriteErrorReponse(w, http.StatusBadRequest, "WRONG_DATA_INPUT", errWrongDataInput.Error())
 		return
 	}
 
@@ -146,32 +146,30 @@ func (ph *PullRequestsHandlers) ReassignReviewer(w http.ResponseWriter, r *http.
 
 		//если pr или юзер не найден
 		if errors.Is(err, service.ErrNoResourse) {
-			helpers.WriteErrorReponse(w, http.StatusNotFound, "NOT_FOUND", NOT_FOUND)
+			helpers.WriteErrorReponse(w, http.StatusNotFound, "NOT_FOUND", errNotFound.Error())
 			return
 		}
 
 		//если pr уже имеет статус MERGED
 		if errors.Is(err, service.ErrPrMerged) {
-			helpers.WriteErrorReponse(w, http.StatusConflict, "PR_MERGED", PR_MERGED)
+			helpers.WriteErrorReponse(w, http.StatusConflict, "PR_MERGED", errPrMerged.Error())
 			return
 		}
 
 		//если данный пользователь не назначен на данный pr
 		if errors.Is(err, service.ErrNoSuchReviewer) {
-			helpers.WriteErrorReponse(w, http.StatusConflict, "NOT_ASSIGNED", NOT_ASSIGNED)
+			helpers.WriteErrorReponse(w, http.StatusConflict, "NOT_ASSIGNED", errNotAssigned.Error())
 			return
 		}
 
 		//если нет пользователей на назначение
 		if errors.Is(err, service.ErrNoReviewrsToAssign) {
-			helpers.WriteErrorReponse(w, http.StatusConflict, "NO_CANDIDATE", NO_CANDIDATE)
+			helpers.WriteErrorReponse(w, http.StatusConflict, "NO_CANDIDATE", errNoCandidate.Error())
 			return
 		}
 
-		//TODO: ErrNoreviewers не обрабатывается
-
 		//если произошла ошибка в процессе сервисной логики
-		helpers.WriteErrorReponse(w, http.StatusInternalServerError, "SERVER_ERROR", SERVER_ERROR)
+		helpers.WriteErrorReponse(w, http.StatusInternalServerError, "SERVER_ERROR", errInternalServer.Error())
 		return
 	}
 

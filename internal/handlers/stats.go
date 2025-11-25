@@ -17,13 +17,13 @@ type StatsHandlers struct {
 
 func (sh *StatsHandlers) GetStats(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		helpers.WriteErrorReponse(w, http.StatusMethodNotAllowed, "WRONG_METHOD", WRONG_METHOD)
+		helpers.WriteErrorReponse(w, http.StatusMethodNotAllowed, "WRONG_METHOD", errWrongDataInput.Error())
 		return
 	}
 
 	responseDTO, err := sh.StatsService.GetStats()
 	if err != nil {
-		helpers.WriteErrorReponse(w, http.StatusInternalServerError, "SERVER_ERROR", SERVER_ERROR)
+		helpers.WriteErrorReponse(w, http.StatusInternalServerError, "SERVER_ERROR", errInternalServer.Error())
 		return
 	}
 

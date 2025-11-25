@@ -1,17 +1,19 @@
 package handlers
 
-var (
-	WRONG_METHOD     = "This method isn't acceptable"
-	SERVER_ERROR     = "Server error"
-	MISSING_PARAM    = "Query parameter is missing"
-	WRONG_DATA_INPUT = "wrong format of input data"
+import "errors"
 
-	TEAM_EXISTS  = "team_name already exists"
-	PR_EXISTS    = "PR id already exists"
-	NO_REVIEWERS = "PR doesn't have reviewers"
-	PR_MERGED    = "cannot reassign on merged PR"
-	NOT_ASSIGNED = "reviewer is not assigned to this PR"
-	NO_CANDIDATE = "no active replacement candidate in team"
-	NOT_FOUND    = "resourse not found"
-	USER_EXISTS  = "user_id already exists"
+var (
+	errWrongMethod    = errors.New("This method isn't acceptable")
+	errInternalServer = errors.New("Server error")
+	errMissingParam   = errors.New("Query parameter is missing")
+	errWrongDataInput = errors.New("wrong format of input data")
+
+	errTeamExists  = errors.New("team_name already exists")
+	errPrExists    = errors.New("PR id already exists")
+	errNoReviewrs  = errors.New("PR doesn't have reviewers")
+	errPrMerged    = errors.New("cannot reassign on merged PR")
+	errNotAssigned = errors.New("reviewer is not assigned to this PR")
+	errNoCandidate = errors.New("no active replacement candidate in team")
+	errNotFound    = errors.New("resourse not found")
+	errUserExists  = errors.New("user_id already exists")
 )

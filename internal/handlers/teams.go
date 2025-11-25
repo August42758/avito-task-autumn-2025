@@ -18,6 +18,7 @@ type ITeamsHandlers interface {
 
 type TeamsHandlers struct {
 	TeamService service.ITeamsService
+	Validator   validators.IValidator
 }
 
 func (th *TeamsHandlers) AddTeam(w http.ResponseWriter, r *http.Request) {
@@ -35,13 +36,13 @@ func (th *TeamsHandlers) AddTeam(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// валидация
-	validator := validators.NewTeamMemberValidator()
+
 	for _, member := range requestDTO.Members {
-		validator.ValidateId(member.UserId)
-		validator.ValidateUsername(member.Username)
+		th.Validator.ValidateUserId(member.UserId)
+		th.Validator.ValidateUsername(member.Username)
 	}
 
-	if !validator.IsValid {
+	if !th.Validator.GetIsValid() {
 		helpers.WriteErrorReponse(w, http.StatusBadRequest, "WRONG_DATA_INPUT", errWrongDataInput.Error())
 		return
 	}

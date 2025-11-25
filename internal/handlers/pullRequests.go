@@ -19,6 +19,7 @@ type IPullRequestsHandlers interface {
 
 type PullRequestsHandlers struct {
 	PullRequestService service.IPullRequestsService
+	Validator          validators.IValidator
 }
 
 func (ph *PullRequestsHandlers) AddPullRequest(w http.ResponseWriter, r *http.Request) {
@@ -36,11 +37,10 @@ func (ph *PullRequestsHandlers) AddPullRequest(w http.ResponseWriter, r *http.Re
 	}
 
 	// валидация
-	validator := validators.NewPullRequestValidator()
-	validator.ValidatePullRequestId(requestDTO.PullRequestId)
-	validator.ValidatePullRequestName(requestDTO.PullRequestName)
-	validator.ValidateAuthorId(requestDTO.AuthorID)
-	if !validator.IsValid {
+	ph.Validator.ValidatePullRequestId(requestDTO.PullRequestId)
+	ph.Validator.ValidatePullRequestName(requestDTO.PullRequestName)
+	ph.Validator.ValidateUserId(requestDTO.AuthorID)
+	if !ph.Validator.GetIsValid() {
 		helpers.WriteErrorReponse(w, http.StatusBadRequest, "WRONG_DATA_INPUT", errWrongDataInput.Error())
 		return
 	}
@@ -84,9 +84,8 @@ func (ph *PullRequestsHandlers) MergePullRequest(w http.ResponseWriter, r *http.
 	}
 
 	// валидация
-	validator := validators.NewPullRequestValidator()
-	validator.ValidatePullRequestId(requestDTO.PullRequestId)
-	if !validator.IsValid {
+	ph.Validator.ValidatePullRequestId(requestDTO.PullRequestId)
+	if !ph.Validator.GetIsValid() {
 		helpers.WriteErrorReponse(w, http.StatusBadRequest, "WRONG_DATA_INPUT", errWrongDataInput.Error())
 		return
 	}
@@ -130,10 +129,9 @@ func (ph *PullRequestsHandlers) ReassignReviewer(w http.ResponseWriter, r *http.
 	}
 
 	// валидация
-	validator := validators.NewPullRequestValidator()
-	validator.ValidatePullRequestId(requestDTO.PullRequestId)
-	validator.ValidateAuthorId(requestDTO.OldUserId) // это не автор, но пускай будет так
-	if !validator.IsValid {
+	ph.Validator.ValidatePullRequestId(requestDTO.PullRequestId)
+	ph.Validator.ValidateUserId(requestDTO.OldUserId)
+	if !ph.Validator.GetIsValid() {
 		helpers.WriteErrorReponse(w, http.StatusBadRequest, "WRONG_DATA_INPUT", errWrongDataInput.Error())
 		return
 	}

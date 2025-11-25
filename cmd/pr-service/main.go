@@ -11,6 +11,7 @@ import (
 	"pr-service/internal/repository"
 	"pr-service/internal/routes.go"
 	"pr-service/internal/service"
+	"pr-service/internal/validators"
 )
 
 func main() {
@@ -86,17 +87,22 @@ func main() {
 		PullRequestsRepository: pullRequestsRepository,
 	}
 
+	validator := validators.NewValidator()
+
 	// создаем handlers
 	usersHandler := &handlers.UsersHandlers{
 		UserService: usersService,
+		Validator:   validator,
 	}
 
 	teamsHandler := &handlers.TeamsHandlers{
 		TeamService: teamsService,
+		Validator:   validator,
 	}
 
 	pullRequestsHandler := &handlers.PullRequestsHandlers{
 		PullRequestService: pullRequestsService,
+		Validator:          validator,
 	}
 
 	statsHandler := &handlers.StatsHandlers{

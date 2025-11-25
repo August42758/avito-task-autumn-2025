@@ -18,6 +18,7 @@ type IUsersHandlers interface {
 
 type UsersHandlers struct {
 	UserService service.IUsersService
+	Validator   validators.IValidator
 }
 
 func (uh *UsersHandlers) SetIsActive(w http.ResponseWriter, r *http.Request) {
@@ -35,9 +36,8 @@ func (uh *UsersHandlers) SetIsActive(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// валидация
-	validator := validators.NewTeamMemberValidator()
-	validator.ValidateId(requestDTO.Id)
-	if !validator.IsValid {
+	uh.Validator.ValidateUserId(requestDTO.Id)
+	if !uh.Validator.GetIsValid() {
 		helpers.WriteErrorReponse(w, http.StatusBadRequest, "WRONG_DATA_INPUT", errWrongDataInput.Error())
 		return
 	}
